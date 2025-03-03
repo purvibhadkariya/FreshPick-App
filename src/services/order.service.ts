@@ -1,4 +1,5 @@
 import { Orders } from "../models/orders.model";
+import mongoose from "mongoose";
 
 export const createOrderService = async (orderData: any) => {
   try {
@@ -12,7 +13,7 @@ export const createOrderService = async (orderData: any) => {
 
 export const getOrderService = async (orderId: string) => {
   try {
-    return await Orders.findById(orderId).populate("items.productId");
+    return await Orders.findById(orderId).populate("productId");
   } catch (error) {
     throw new Error("Error fetching order: " + error);
   }
@@ -20,15 +21,29 @@ export const getOrderService = async (orderId: string) => {
 
 export const updateOrderService = async (orderId: string, status: string) => {
   try {
-    return await Orders.findByIdAndUpdate(
+    // Validate orderId format
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return { success: false, message: "Invalid order ID." };
+    }
+
+    // Find and update order status
+    const updatedOrder = await Orders.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
     );
+
+    if (!updatedOrder) {
+      return { success: false, message: "Order not found." };
+    }
+
+    return { success: true, data: updatedOrder };
   } catch (error) {
-    throw new Error("Error updating order: " + error);
+    console.error("Error updating order:", error);
+    return { success: false, message: "Internal server error." };
   }
 };
+
 
 export const cancelOrderService = async (orderId: string) => {
   try {
@@ -40,7 +55,9 @@ export const cancelOrderService = async (orderId: string) => {
 
 export const getAllOrdersService = async () => {
   try {
-    return await Orders.find().populate("items.productId");
+    console.log("ddd");
+    
+    return await Orders.find()
   } catch (error) {
     throw new Error("Error fetching orders: " + error);
   }

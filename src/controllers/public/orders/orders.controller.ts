@@ -11,16 +11,10 @@ import {
 
 @Controller("public/orders")
 export class OrderController {
-  // CREATE a new order
   @Post("create")
   async createOrder(req: Request, res: Response) {
     try {
-      const {        
-        productId,
-        quantity,
-        address,
-        userId,
-      } = req.body;
+      const { productId, quantity, address, userId } = req.body;
 
       if (!userId || !productId || !quantity || !address) {
         return resMiddlewareCommon(res, false, "Missing required fields.");
@@ -38,18 +32,6 @@ export class OrderController {
     }
   }
 
-  // GET order by ID
-  @Get(":orderId")
-  async getOrder(req: Request, res: Response) {
-    try {
-      const { orderId } = req.params;
-      const order = await getOrderService(orderId);
-      resMiddlewareCommon(res, true, "Order fetched successfully", order);
-    } catch (error: any) {
-      resMiddlewareCommon(res, false, "Error fetching order.");
-    }
-  }
-
   // UPDATE order status
   @Put("update")
   async updateOrder(req: Request, res: Response) {
@@ -61,6 +43,9 @@ export class OrderController {
       }
 
       const updatedOrder = await updateOrderService(orderId, status);
+      if (!updatedOrder.success) {
+        return resMiddlewareCommon(res, false, "order not found");
+      }
       resMiddlewareCommon(
         res,
         true,
@@ -92,6 +77,17 @@ export class OrderController {
       resMiddlewareCommon(res, true, "All orders fetched successfully", orders);
     } catch (error: any) {
       resMiddlewareCommon(res, false, "Error fetching all orders.");
+    }
+  }
+
+  @Get("id/:orderId")
+  async getOrder(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+      const order = await getOrderService(orderId);
+      resMiddlewareCommon(res, true, "Order fetched successfully", order);
+    } catch (error: any) {
+      resMiddlewareCommon(res, false, "Error fetching order.");
     }
   }
 }

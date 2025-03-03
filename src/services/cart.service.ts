@@ -1,4 +1,4 @@
-import { error } from "console";
+import { error, log } from "console";
 import { Cart } from "../models/cart.model";
 import { Types } from "mongoose";
 
@@ -38,12 +38,22 @@ export const addToCartService = async (
   }
 };
 
-export const getCartService = async (userId: string) => {
+export const getCartService = async (userId?: string) => {
   try {
+    if (!userId) {
+      const cart = await Cart.find()
+        .populate("items.productId")
+        .lean();
+
+      if (!cart) {
+        return { message: "cart is Empty", items: [] };
+      }
+      return cart;
+    }
+
     if (!Types.ObjectId.isValid(userId)) {
       throw new Error("Invalid userId");
     }
-
     const cart = await Cart.findOne({ userId: new Types.ObjectId(userId) })
       .populate("items.productId")
       .lean();
@@ -100,15 +110,15 @@ export const removeCartItemService = async (
 
     const cart = await Cart.findOneAndUpdate(
       { userId: new Types.ObjectId(userId) },
-      { $pull:{items:{productId:new Types.ObjectId(productId)}}},
-      {new:true}
+      { $pull: { items: { productId: new Types.ObjectId(productId) } } },
+      { new: true }
     );
     if (!cart) return null;
 
-    if(cart.items.length === 0){      
+    if (cart.items.length === 0) {
       await Cart.findByIdAndDelete(cart._id);
       return { success: true, message: "Cart deleted as no items left." };
-    }  
+    }
     return { success: true, message: "Item removed from cart.", data: cart };
   } catch (error) {
     throw new Error("Error removing cart item: " + error);
@@ -117,7 +127,8 @@ export const removeCartItemService = async (
 
 export const clearCartService = async (userId: string) => {
   try {
-    return await Cart.deleteMany({ userId }); // Use deleteMany to clear all items
+    
+    return await Cart.deleteMany({ userId }); 
   } catch (error) {
     throw new Error(`Error clearing cart: ${(error as Error).message}`);
   }

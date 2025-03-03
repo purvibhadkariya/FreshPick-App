@@ -1,46 +1,68 @@
-import { Product, IProduct } from "../models/product.model";
+import { storeAttachment } from "./attachment.service";
+import path from "path";
+import fs from "fs";
 import { isValidObjectId } from "mongoose";
+import { Product, IProduct } from "../models/product.model";
 
-// Create Product Service
-export const createProductService = async (productData: IProduct) => {
+export const createProductService = async (
+  req: any,
+  name: string,
+  description: string,
+  price: string,
+  mrp: string,
+  discount: string,
+  specification: string,
+  weight: string,
+  inStock: string,
+  isAvailable: string,
+  coupons: string,
+  details: string
+) => {
   try {
-    // Validate required fields
-    const requiredFields = [
-      "name",
-      "price",
-      "mrp",
-      "images",
-      "weight",
-      "inStock",
-      "isAvailable",
-      "category",
-    ];
+    if (!req.files || req.files.length === 0) {
+      throw new Error("No file uploaded.");
+    }
 
-    for (const field of requiredFields) {
-      if (!productData[field]) {
-        throw new Error(`Missing required field: ${field}`);
+    if (req.files.length) {
+      const bufferData = req.files[0].buffer;
+      const mimeType = req.files[0]?.mimetype;
+      const originalFileName = req.files[0].originalname;
+      const extension = path.extname(originalFileName).slice(1);
+      const fileName = `${new Date().getTime()}.${extension}`;
+      const imgPath = path.join(__dirname, "../../public/images", fileName);
+      fs.writeFileSync(imgPath, bufferData);
+
+      const attachmentData = await storeAttachment(
+        originalFileName,
+        `images/${fileName}`,
+        mimeType
+      );
+      if (!name || !price || !mrp || !inStock || !isAvailable) {
+        throw new Error(
+          "Missing required fields: name, price, mrp, inStock, isAvailable."
+        );
       }
+      return Product.create({
+        name: name,
+        description: description,
+        price: price,
+        mrp: mrp,
+        discount: discount,
+        specification: specification,
+        weight: weight,
+        inStock: inStock,
+        isAvailable: isAvailable,
+        coupons: coupons,
+        details: details,
+        heroImg: attachmentData._id,
+      });
     }
-
-    // Validate category ID
-    if (!isValidObjectId(productData.category)) {
-      throw new Error("Invalid category ID format");
-    }
-
-    // Creating a new product instance
-    const newProduct = new Product(productData);
-
-    // Saving product to the database
-    const savedProduct = await newProduct.save();
-
-    return savedProduct.toObject(); // Convert to plain object
   } catch (error: any) {
     console.error("Error creating product:", error.message);
     throw new Error(error.message || "Failed to create product");
   }
 };
 
-// Get Product by ID or Get All Products
 export const getProductByIDservice = async (id?: string) => {
   try {
     if (id) {
@@ -57,7 +79,6 @@ export const getProductByIDservice = async (id?: string) => {
   }
 };
 
-// Update Product Service
 export const updateProductService = async (
   id: string,
   updateData: Partial<IProduct>
@@ -68,8 +89,8 @@ export const updateProductService = async (
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
-      new: true, // Returns the updated document
-      runValidators: true, // Ensures updates follow schema validation
+      new: true, 
+      runValidators: true, 
     });
 
     if (!updatedProduct) {
@@ -83,7 +104,6 @@ export const updateProductService = async (
   }
 };
 
-// Delete Product Service
 export const deleteService = async (id: string) => {
   try {
     if (!isValidObjectId(id)) {

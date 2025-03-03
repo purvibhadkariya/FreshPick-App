@@ -1,14 +1,14 @@
 import { Document, Schema, model, Model } from "mongoose";
+import { IAttachment } from "./attachment.model";
 
 export interface IProduct extends Document {
-  [key: string]: any;
   name: string;
   description: string;
   price: number;
   mrp: number;
   discount: number;
-  images: string[];
-  specification: String;
+  heroImg: IAttachment;
+  specification: string;
   weight: number;
   inStock: boolean;
   isAvailable: boolean;
@@ -25,7 +25,7 @@ const ProductSchema = new Schema(
     price: { type: Number, required: true, min: 0 },
     mrp: { type: Number, required: true, min: 0 },
     discount: { type: Number, default: 0, min: 0 },
-    images: [{ type: String }],
+    heroImg: { type: Schema.Types.ObjectId, ref: "Attachment", index: true },
     specification: { type: String },
     weight: { type: Number, required: true, min: 0 },
     inStock: { type: Boolean, default: true },
@@ -39,4 +39,7 @@ const ProductSchema = new Schema(
   { timestamps: true }
 );
 
-export const Product: Model<IProduct> = model<IProduct>("Product",ProductSchema);
+export const Product: Model<IProduct> = model<IProduct>(
+  "Product",
+  ProductSchema
+);

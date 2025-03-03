@@ -10,9 +10,15 @@ export const createCouponService = async (couponData: any) => {
   }
 };
 
-export const getCouponService = async (code: string) => {
+export const getCouponService = async (code?: string) => {
   try {
-    return await Coupon.findOne({ code });
+    if (code) {
+      console.log(code);
+      // return 
+      const coupon = await Coupon.findOne({ code });
+      return coupon || null; 
+    }
+    return await Coupon.find();
   } catch (error) {
     throw new Error("Error fetching coupon: " + error);
   }

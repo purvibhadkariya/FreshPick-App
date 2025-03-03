@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { getUserDetailsById, login, signup } from "../../services/auth.service";
 import resMiddlewareCommon from "../../@utils/middlewares/resMiddleware";
 // import { intializeMulter } from "../../services/multer.service";
-
+    
 
 
 @Controller('auth')

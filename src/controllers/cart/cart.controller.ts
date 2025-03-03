@@ -31,8 +31,22 @@ export class CartController {
     }
   }
 
+  @Get("all")
+  async getCartall(req: Request, res: Response) {
+    try {
+      const cart = await getCartService();
+      
+      if (!cart) {
+        return resMiddlewareCommon(res, true, "Cart is empty.", { items: [] });
+      }
+      resMiddlewareCommon(res, true, "Cart fetched successfully", cart);
+    } catch (error: any) {
+      resMiddlewareCommon(res, false, "Error fetching cart.");
+    }
+  }
+
   // GET cart items for a user
-  @Get(":userId")
+  @Get("id/:userId")
   async getCart(req: Request, res: Response) {
     try {
       const { userId } = req.params;

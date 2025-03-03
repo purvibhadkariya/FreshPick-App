@@ -1,39 +1,101 @@
-import { Controller, Delete, Get, Post, Put } from "@overnightjs/core";
+import {
+  Controller,
+  Delete,
+  Get,
+  Middleware,
+  Post,
+  Put,
+} from "@overnightjs/core";
 import { Request, Response } from "express";
 import resMiddlewareCommon from "../../../@utils/middlewares/resMiddleware";
+import { intializeMulter } from "../../../services/multer.service";
 import {
   createProductService,
+  deleteService,
   getProductByIDservice,
   updateProductService,
-  deleteService,
 } from "../../../services/product.service";
 
 @Controller("public/products")
 export class productController {
   @Post("create")
+  @Middleware(intializeMulter())
   async createProduct(req: Request, res: Response) {
     try {
-      const requiredFields = ["name", "price", "mrp", "images", "weight", "inStock", "isAvailable", "category"];
-      const missingFields = requiredFields.filter(field => !req.body[field] || (Array.isArray(req.body[field]) && req.body[field].length === 0));
+      console.log("Received body:", req.body);
+      console.log("Received files:", req.files);
 
-      if (missingFields.length > 0) {
-        return resMiddlewareCommon(res, false, `Missing required fields: ${missingFields.join(", ")}`);
+      if (!req.body?.data) {
+        return resMiddlewareCommon(res, false, "Invalid request data");
       }
 
-      const data = await createProductService(req.body);
-      
-      return resMiddlewareCommon(res, true, "Product created successfully", data);
+      let parsedData;
+      try {
+        parsedData = JSON.parse(req.body.data);
+      } catch (error) {
+        return resMiddlewareCommon(
+          res,
+          false,
+          "Invalid JSON format in request"
+        );
+      }
+
+      console.log("Parsed Data:", parsedData); // Check parsed JSON
+
+      const {
+        name,
+        description,
+        price,
+        mrp,
+        discount,
+        specification,
+        weight,
+        inStock,
+        isAvailable,
+        coupons,
+        details,
+      } = parsedData;
+
+      if (!name || !price || !mrp || !inStock || !isAvailable) {
+        return resMiddlewareCommon(res, false, "Missing required fields");
+      }
+
+      const data = await createProductService(
+        req,
+        name,
+        description,
+        price,
+        mrp,
+        discount,
+        specification,
+        weight,
+        inStock,
+        isAvailable,
+        coupons,
+        details
+      );
+
+      return resMiddlewareCommon(
+        res,
+        true,
+        "Product created successfully",
+        data
+      );
     } catch (error: any) {
       console.error("Error in createProduct:", error.message);
-      return resMiddlewareCommon(res, false, error.message || "Something went wrong. Please try again.");
+      return resMiddlewareCommon(
+        res,
+        false,
+        error.message || "Something went wrong. Please try again."
+      );
     }
   }
 
-@Get("")
+  @Get("")
   async getProducts(req: Request, res: Response) {
     try {
       const products = await getProductByIDservice();
-      if (!products || products.length === 0) {
+      if (!products) {
         return resMiddlewareCommon(res, false, "No products found.");
       }
       return resMiddlewareCommon(
@@ -52,7 +114,7 @@ export class productController {
   async getProductByID(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const productById = await getProductByIDservice(id); // ✅ Pass `id` to the service
+      const productById = await getProductByIDservice(id);
       if (!productById) {
         return resMiddlewareCommon(res, false, "Product not found.");
       }
@@ -70,7 +132,7 @@ export class productController {
 
   @Put("update/:id")
   async updateProduct(req: Request, res: Response) {
-    try {
+    try {      
       const { id } = req.params;
       const updateData = await updateProductService(id, req.body);
 
@@ -86,7 +148,7 @@ export class productController {
         true,
         "Product updated successfully",
         updateData
-      ); // ✅ Fixed message
+      );
     } catch (error: any) {
       console.error("Error in updateProduct:", error);
       return resMiddlewareCommon(

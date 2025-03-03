@@ -10,7 +10,6 @@ import {
 
 @Controller("public/coupons")
 export class CouponController {
-  
   @Post("create")
   async createCoupon(req: Request, res: Response) {
     try {
@@ -32,8 +31,17 @@ export class CouponController {
     }
   }
 
-  // GET coupon by code
-  @Get(":code")
+  @Get("all")
+  async getCouponall(req: Request, res: Response) {
+    try {
+      const coupon = await getCouponService();
+      resMiddlewareCommon(res, true, "Coupon fetched successfully", coupon);
+    } catch (error: any) {
+      resMiddlewareCommon(res, false, "Error fetching coupon.");
+    }
+  }
+
+  @Get("co/:code")
   async getCoupon(req: Request, res: Response) {
     try {
       const { code } = req.params;
